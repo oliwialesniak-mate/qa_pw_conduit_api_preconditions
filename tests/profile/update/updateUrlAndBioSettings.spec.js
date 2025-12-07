@@ -1,30 +1,42 @@
 import { test } from '../../_fixtures/fixtures';
-import { signUpUser } from '../../../src/ui/actions/auth/signUpUser';
+import { EditProfileSettingsPage } from '../../../src/ui/pages/profile/EditProfileSettingsPage';
+import { ViewUserProfilePage } from '../../../src/ui/pages/profile/ViewUserProfilePage';
 
 let newSettings;
 
-test.beforeEach(async ({ page, user, factories }) => {
-  await signUpUser(page, user);
+test.beforeEach(async ({ loggedInUserAndPage, factories }) => {
+  const { registeredUser } = loggedInUserAndPage;
 
-  newSettings = factories.userSettings.generateUserSettings({ user });
+  // keep the same factory API – just pass the registered user from the fixture
+  newSettings = factories.userSettings.generateUserSettings({
+    user: registeredUser,
+  });
 });
 
 test('Update URL and Bio settings for registered user', async ({
-  editSettingsPage,
-  viewUserProfilePage,
+  loggedInUserAndPage,
 }) => {
+  const { page } = loggedInUserAndPage;
+
+  const editSettingsPage = new EditProfileSettingsPage(page);
+  const viewUserProfilePage = new ViewUserProfilePage(page);
+
   await editSettingsPage.open();
+
   await editSettingsPage.fillProfilePictureUrlField(
     newSettings.profilPictureUrl,
   );
   await editSettingsPage.fillBioTextArea(newSettings.bio);
   await editSettingsPage.clickUpdateSettingsButton();
+
   await editSettingsPage.assertProfilePictureUrlHasValue(
     newSettings.profilPictureUrl,
   );
   await viewUserProfilePage.assertBioHasText(newSettings.bio);
   await viewUserProfilePage.assertUsernameIsCorrect(newSettings.username);
+
   await viewUserProfilePage.clickEditProfileSettingsLink();
+
   await editSettingsPage.assertProfilePictureUrlHasValue(
     newSettings.profilPictureUrl,
   );
