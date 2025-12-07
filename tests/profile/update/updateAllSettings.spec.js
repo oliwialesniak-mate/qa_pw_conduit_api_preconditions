@@ -4,17 +4,20 @@ import { ViewUserProfilePage } from '../../../src/ui/pages/profile/ViewUserProfi
 
 let newSettings;
 
-test.beforeEach(async ({ factories }) => {
-  newSettings = factories.userSettings.generateUserSettings();
-});
-
 test('Update all user settings for registered user', async ({
   loggedInUserAndPage,
+  factories,
 }) => {
-  const { page } = loggedInUserAndPage;
+  const { page, registeredUser } = loggedInUserAndPage;
 
   const editSettingsPage = new EditProfileSettingsPage(page);
   const viewUserProfilePage = new ViewUserProfilePage(page);
+
+  // Generate settings based on the existing registered user to avoid uniqueness collisions
+  newSettings = factories.userSettings.generateUserSettings({
+    emailBase: registeredUser.email,
+    usernameBase: registeredUser.username,
+  });
 
   await editSettingsPage.open();
 

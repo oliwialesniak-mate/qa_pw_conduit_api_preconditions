@@ -11,8 +11,7 @@ test.beforeEach(
 
     const articlePayload = {
       title: articleWithoutTags.title,
-      description:
-        articleWithoutTags.description ?? 'Article created via API',
+      description: articleWithoutTags.description ?? 'Article created via API',
       body: articleWithoutTags.text,
       tagList: [],
     };
@@ -39,9 +38,15 @@ test('View an article created by another registered user', async ({
   const viewer = registeredUsers[1];
 
   const viewerStorage = generateStorageStateForAuth(viewer);
-  const viewerContext = await browser.newContext(viewerStorage);
-  const viewerPage = await viewerContext.newPage();
 
+  // Supports both "raw storage object" and "context options" formats.
+  const viewerContext = await browser.newContext(
+    viewerStorage.storageState || viewerStorage.storageState === undefined
+      ? viewerStorage
+      : { storageState: viewerStorage },
+  );
+
+  const viewerPage = await viewerContext.newPage();
   const page = new InternalViewArticlePage(viewerPage, 2);
 
   await page.open(articleWithoutTags.url);
