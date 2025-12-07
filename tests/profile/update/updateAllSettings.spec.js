@@ -1,8 +1,6 @@
-import { test } from '../../_fixtures/fixtures';
+import { test, expect } from '../../_fixtures/fixtures';
 import { EditProfileSettingsPage } from '../../../src/ui/pages/profile/EditProfileSettingsPage';
 import { ViewUserProfilePage } from '../../../src/ui/pages/profile/ViewUserProfilePage';
-
-let newSettings;
 
 test('Update all user settings for registered user', async ({
   loggedInUserAndPage,
@@ -10,16 +8,20 @@ test('Update all user settings for registered user', async ({
 }) => {
   const { page, registeredUser } = loggedInUserAndPage;
 
-  const editSettingsPage = new EditProfileSettingsPage(page);
-  const viewUserProfilePage = new ViewUserProfilePage(page);
+  // loggedInUserAndPage fixture creates user via API (requirement)
+  // and then logs in through UI. We generate new settings based on this user
+  // to avoid username/email collisions (deterministic & stable).
 
-  // Generate settings based on the existing registered user to avoid uniqueness collisions
-  newSettings = factories.userSettings.generateUserSettings({
+  const newSettings = factories.userSettings.generateUserSettings({
     emailBase: registeredUser.email,
     usernameBase: registeredUser.username,
   });
 
+  const editSettingsPage = new EditProfileSettingsPage(page);
+  const viewUserProfilePage = new ViewUserProfilePage(page);
+
   await editSettingsPage.open();
+  await editSettingsPage.assertFormLoaded(); // recommended robustness
 
   await editSettingsPage.fillProfilePictureUrlField(
     newSettings.profilPictureUrl,
@@ -29,12 +31,15 @@ test('Update all user settings for registered user', async ({
   await editSettingsPage.fillEmailField(newSettings.email);
   await editSettingsPage.clickUpdateSettingsButton();
 
+  // Immediate assertions after saving
   await editSettingsPage.assertProfilePictureUrlHasValue(
     newSettings.profilPictureUrl,
   );
+
   await viewUserProfilePage.assertBioHasText(newSettings.bio);
   await viewUserProfilePage.assertUsernameIsCorrect(newSettings.username);
 
+  // Navigate back and reassert persistence
   await viewUserProfilePage.clickEditProfileSettingsLink();
 
   await editSettingsPage.assertProfilePictureUrlHasValue(

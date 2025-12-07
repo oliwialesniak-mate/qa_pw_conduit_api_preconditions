@@ -11,17 +11,18 @@ test('Login with new password after it was updated via API', async ({
   const signInPage = new SignInPage(page);
   const internalHomePage = new InternalHomePage(page);
 
-  // Must use registeredUser (not loggedInUserAndPage) so the test performs a real UI login from a logged-out state.
-  // page fixture starts with no active session.
+  // Must start logged out and log in via UI → therefore we use registeredUser.
+  // registeredUser is created via API (fixture requirement).
 
   const newPassword = factories.user.generatePassword();
-
   const updatedUser = { ...registeredUser, password: newPassword };
 
-  const updateResponse = await usersApi.updateUser(updatedUser);
-  expect(updateResponse.ok()).toBeTruthy();
+  const response = await usersApi.updateUser(updatedUser, registeredUser.token);
+  expect(response.status()).toBe(200);
 
   await signInPage.open();
+  await signInPage.assertFormVisible();
+
   await signInPage.fillEmailField(registeredUser.email);
   await signInPage.fillPasswordField(newPassword);
   await signInPage.clickSignInButton();

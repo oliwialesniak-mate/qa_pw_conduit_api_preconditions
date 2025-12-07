@@ -10,18 +10,19 @@ test('Login with old password after it was updated via API', async ({
 }) => {
   const signInPage = new SignInPage(page);
 
-  // Using registeredUser intentionally because this test must sign in via the UI from a logged-out state.
-  // loggedInUserAndPage would already have an active session.
-  // page fixture guarantees user starts fully logged out.
+  // This test intentionally uses registeredUser instead of loggedInUserAndPage
+  // because it must start from a fully logged-out context and perform a UI login.
+  // registeredUser is always created via the Conduit API (fixture requirement).
 
   const newPassword = factories.user.generatePassword();
-
   const updatedUser = { ...registeredUser, password: newPassword };
 
-  const updateResponse = await usersApi.updateUser(updatedUser);
-  expect(updateResponse.ok()).toBeTruthy(); // required API assertion
+  const response = await usersApi.updateUser(updatedUser, registeredUser.token);
+  expect(response.status()).toBe(200); // stronger assertion than ok()
 
   await signInPage.open();
+  await signInPage.assertFormVisible(); // recommended robustness
+
   await signInPage.fillEmailField(registeredUser.email);
   await signInPage.fillPasswordField(registeredUser.password);
   await signInPage.clickSignInButton();
